@@ -56,7 +56,7 @@ O projeto está configurado para rodar em um ambiente Docker. O `docker-compose.
 - **Tasks**: As tarefas são modularizadas dentro da pasta `airflow/tasks/`. Um exemplo é o `task_nome_camada.py`, que pode conter lógica para processar arquivos parquet.
 - **Configurações**: Todas as configurações e customizações específicas do Airflow estão na pasta `airflow/config_airflow/`.
 
-![airflow](./image/airflow.png)
+![airflow](./image/airflow2.png)
   
 ## ![s3](https://github.com/user-attachments/assets/0ce8f052-5282-4433-8421-24ba2493448b) MinIO
 - **Armazenamento**: Utilização e armazenamento dos dados na utilização dos buckets bronze, silver e gold. Atendendo aos requisitos solicitados no escopo do projeto.
