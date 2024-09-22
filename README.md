@@ -76,6 +76,8 @@ O projeto está configurado para rodar em um ambiente Docker. O `docker-compose.
 - **Users**: Configuração de controle de acesso as camadas por grupo de usuários.
 - **Configurações**: Todas as configurações e customizações específicas do Metabase estão no arquivo `docker-compose.yml`.
 
+![dashboard](./image/DashBoard.png)
+
 ## 🚀 Como iniciar
 
 1. Clone o repositório:
