@@ -16,7 +16,7 @@ Nesta arquitetura, os dados são extraídos de uma unica fonte(API), contendo da
 A estrutura do projeto está organizada da seguinte maneira:
 
 ```
-/ENG_DADOS_PROJETO1
+/BREWERIES_CASE
 │
 ├── .temp/                               # Nessa pasta existe os arquivos que utilizei para exploração dos dados inicialmente, e tratamentos realizados em Spark
 │   ├── bs_bronze.parquet
@@ -56,14 +56,20 @@ O projeto está configurado para rodar em um ambiente Docker. O `docker-compose.
 - **Tasks**: As tarefas são modularizadas dentro da pasta `airflow/tasks/`. Um exemplo é o `task_nome_camada.py`, que pode conter lógica para processar arquivos parquet.
 - **Configurações**: Todas as configurações e customizações específicas do Airflow estão na pasta `airflow/config_airflow/`.
 
-![airflow](./image/airflow2.png)
+![airflow](./image/airflow.png)
   
-## ![s3](https://github.com/user-attachments/assets/0ce8f052-5282-4433-8421-24ba2493448b) MinIO
+## ![s3](https://img.icons8.com/?size=100&id=InvZ8uhKnEsJ&format=png&color=000000) MinIO
 - **Armazenamento**: Utilização e armazenamento dos dados na utilização dos buckets bronze, silver e gold. Atendendo aos requisitos solicitados no escopo do projeto.
 - **Medalhão**: Padrão de design de dados usado em um datalake, com o objetivo de melhorar incremental e progressivamente a estrutura e qualidade das camadas(Bronze ⇒ Silver ⇒ Gold) da arquitetura.
 - **Configurações**: Todas as configurações e customizações específicas do Metabase estão no arquivo `docker-compose.yml`.
 
 ![minio](./image/minio.png)
+
+## ![postgres](https://img.icons8.com/?size=100&id=38561&format=png&color=000000) Postgres
+- **Data-Viz**: Criação e disponibilidade dos dados, atendendo aos mais diversos tipos de consumidores.
+- **Configurações**: Todas as configurações e customizações específicas do Metabase estão no arquivo `docker-compose.yml`.
+
+![bd](./image/bd.png)
 
 ## ![metabase](https://github.com/user-attachments/assets/02627285-44d7-4475-9e71-15079d4d0b0e) Metabase
 - **Data-Viz**: Criação e disponibilidade de visualização de dados, conexão com o postgres, atendendo assim aos mais diversos tipos de consumidores.
