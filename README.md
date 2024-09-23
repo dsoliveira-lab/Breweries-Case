@@ -1,7 +1,7 @@
 # BEES Data Engineering 
 ## 🍺 Data Project – Breweries Case
 
-Este repositório contém a estrutura de um projeto de dados, tendo por objetivo a avaliação das habilidades em consumir dados de uma API, transformando-os e persistindo-os em um data lake seguindo a arquitetura medalhão com três camadas: dados brutos(Bronze), dados selecionados particionado por localização(Silver) e uma camada analítica agregada(Gold).  Integrando o Apache Airflow, Minio, Postgres e Metabase. Utilizando uma infra-estrutura de conteninerização(Docker), boas praticas de programação(Python) e Documentação, alem da criação de repositorio e versionamento do mesmo.
+Este repositório contém a estrutura de um projeto de dados, tendo por objetivo a avaliação das habilidades em consumir dados de uma API, transformando-os e persistindo-os em um data lake seguindo a arquitetura medalhão com três camadas: dados brutos(Bronze), dados selecionados particionado por localização(Silver) e uma camada analítica agregada(Gold). Integrando o Apache Airflow, Minio, Postgres e Metabase. Utilizando uma infra-estrutura de conteinerização(Docker), boas práticas de programação(Python) e Documentação, além da criação de repositório e versionamento do mesmo.
  
 Bons estudos e bebam água💦!
 
@@ -10,7 +10,7 @@ Abaixo está a representação gráfica da arquitetura deste projeto:
 
 ![Desenho Arquitetura](./image/Diagrama_Project_BEES.png)
 
-Nesta arquitetura, os dados são extraídos de uma unica fonte(API), contendo dados semi-estruturados. Os dados serão transformados e carregados em um DataLake, e finalmente consumidos por ferramentas de visualização como o Metabase.
+Nesta arquitetura, os dados são extraídos de uma única fonte(API), contendo dados semi-estruturados. Os dados serão transformados e carregados em um Data Lake, e finalmente consumidos por ferramentas de visualização como o Metabase.
 
 ## 📂 Estrutura do Projeto
 A estrutura do projeto está organizada da seguinte maneira:
@@ -32,16 +32,16 @@ A estrutura do projeto está organizada da seguinte maneira:
 │   │   ├── task_bronze.py               # Arquivo de task contendo a extração dos dados vindos da API <https://api.openbrewerydb.org/breweries>, salvando-os na camada bronze.
 │   │   └── task_silver.py               # Arquivo de task contendo os dados coletados na camada_bronze, transformações e particionamentos, salvando os dados na camada silver.
 │   │   └── task_gold.py                 # Arquivo de task contendo dos dados coletados em silver, com resposta a pergunta feita no projeto. 
-├── docker-compose.yaml                  # Estrutura e requisitos iniciais em conteirner do projeto.
-├── .gitgnore                            # Arquivo .git para ignorar arquivos e diretorios que não são necessários para utilização do projeto.
+├── docker-compose.yaml                  # Estrutura e requisitos iniciais em container do projeto.
+├── .gitgnore                            # Arquivo .git para ignorar arquivos e diretórios que não são necessários para utilização do projeto.
 ├── requirements.txt                     # Responsavel pelas lib's principais para a criação do projeto.
-├── README.md                            # Documentção do projeto, utilizada para o entendimento e funcionamento do mesmo.
+├── README.md                            # Documentação do projeto, utilizada para o entendimento e funcionamento do mesmo.
 ```
 
 ## 🛠️ Tecnologias Utilizadas 
-- **API**: Dados semi-estruturados, utilizados na pratica do projeto.
+- **API**: Dados semi-estruturados, utilizados na prática do projeto.
 - **Apache Airflow**: Para orquestração de workflows e automação de tarefas.
-- **Docker**: Para containerização de serviços, garantindo um ambiente isolado e reprodutível.
+- **Docker**: Para conteinerização de serviços, garantindo um ambiente isolado e reprodutível.
 - **MinIO**: Comparado ao S3 da AWS, servirá para o armazenamento oferecendo escalabilidade, disponibilidade dos dados, segurança e performance. 
 - **Postgres**: Banco de dados utilizado como Data Lake para armazenar as tabelas nas suas diferentes camadas. 
 - **Metabase**: Ferramenta de BI para visualização e análise dos dados armazenados no Data Warehouse.
@@ -52,7 +52,7 @@ O projeto está configurado para rodar em um ambiente Docker. O `docker-compose.
 ![docker](./image/docker.png)
 
 ## ![airflow2](https://github.com/user-attachments/assets/513d0d86-7aa4-4dc8-8086-702037b91348) Airflow
-- **DAGs**: As DAGs (Directed Acyclic Graphs) são definidas dentro da pasta `airflow/dags/`. O arquivo principal é o `dag_main.py`, que orquestra as diferentes tarefas.
+- **DAGs**: As DAGs (Directed Acyclic Graphs) são definidas dentro da pasta `airflow/dags/`. O arquivo principal é o `dag_main.py`, que orquestra diferentes tarefas.
 - **Tasks**: As tarefas são modularizadas dentro da pasta `airflow/tasks/`. Um exemplo é o `task_nome_camada.py`, que pode conter lógica para processar arquivos parquet.
 - **Configurações**: Todas as configurações e customizações específicas do Airflow estão na pasta `airflow/config_airflow/`.
 
@@ -60,7 +60,7 @@ O projeto está configurado para rodar em um ambiente Docker. O `docker-compose.
   
 ## ![s3](https://img.icons8.com/?size=30&id=Gk2QpGf92IzK&format=png&color=000000) MinIO
 - **Armazenamento**: Utilização e armazenamento dos dados na utilização dos buckets bronze, silver e gold. Atendendo aos requisitos solicitados no escopo do projeto.
-- **Medalhão**: Padrão de design de dados usado em um datalake, com o objetivo de melhorar incremental e progressivamente a estrutura e qualidade das camadas(Bronze ⇒ Silver ⇒ Gold) da arquitetura.
+- **Medalhão**: Padrão de design de dados usado em um data lake, com o objetivo de melhorar incremental e progressivamente a estrutura e qualidade das camadas(Bronze ⇒ Silver ⇒ Gold) da arquitetura.
 - **Configurações**: Todas as configurações e customizações específicas do Metabase estão no arquivo `docker-compose.yml`.
 
 ![minio](./image/minio.png)
@@ -73,7 +73,7 @@ O projeto está configurado para rodar em um ambiente Docker. O `docker-compose.
 
 ## ![metabase](https://github.com/user-attachments/assets/02627285-44d7-4475-9e71-15079d4d0b0e) Metabase
 - **Data-Viz**: Criação e disponibilidade de visualização de dados, conexão com o postgres, atendendo assim aos mais diversos tipos de consumidores.
-- **Users**: Configuração de controle de acesso as camadas por grupo de usuários.
+- **Users**: Configuração de controle de acesso às camadas por grupo de usuários.
 - **Configurações**: Todas as configurações e customizações específicas do Metabase estão no arquivo `docker-compose.yml`.
 
 ![dashboard](./image/DashBoard.png)
@@ -108,9 +108,9 @@ O projeto está configurado para rodar em um ambiente Docker. O `docker-compose.
 - [Documentação Oficial do MinIO](https://min.io/docs/kes/)
 - [Documentação Oficial do Metabase](https://www.metabase.com/docs/latest/)
 
-## 📋 Contribuições e Duvidas
+## 📋 Contribuições e Dúvidas
 
-Contribuições e duvidas são bem-vindas, qualquer coisa manda msg!
+Contribuições e dúvidas são bem-vindas, qualquer coisa manda msg!
 
 ## 📝 Licença
 
