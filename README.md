@@ -73,7 +73,7 @@ O projeto está configurado para rodar em um ambiente Docker. O `docker-compose.
 
 ## ![metabase](https://github.com/user-attachments/assets/02627285-44d7-4475-9e71-15079d4d0b0e) Metabase
 - **Data-Viz**: Criação e disponibilidade de visualização de dados, conexão com o postgres, atendendo assim aos mais diversos tipos de consumidores.
-- **Users**: Configuração de controle de acesso às camadas por grupo de usuários.
+- **Users**: Configuração de controle de acesso às camadas e tabelas por grupo de usuários.
 - **Configurações**: Todas as configurações e customizações específicas do Metabase estão no arquivo `docker-compose.yml`.
 
 ![dashboard](./image/DashBoard.png)
