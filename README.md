@@ -18,7 +18,7 @@ A estrutura do projeto está organizada da seguinte maneira:
 ```
 /BREWERIES_CASE
 │
-├── .temp/                               # Nessa pasta existe os arquivos que utilizei para exploração dos dados inicialmente, e tratamentos realizados em Spark
+├── analises/                            # Nessa pasta existe os arquivos que utilizei para exploração dos dados inicialmente, e tratamentos realizados em Spark.
 │   ├── bs_bronze.parquet
 │   └── bs_silver.parquet
 │   └── explo.ipynb
