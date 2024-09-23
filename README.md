@@ -8,7 +8,7 @@ Bons estudos e bebam água💦!
 ## 📊 Arquitetura da Pipeline
 Abaixo está a representação gráfica da arquitetura deste projeto:
 
-![Desenho Arquitetura](./image/Diagrama_Project_BEES.png)
+<img src="./image/Diagrama_Project_BEES.png" alt="Desenho Arquitetura" width="500" />
 
 Nesta arquitetura, os dados são extraídos de uma única fonte(API), contendo dados semi-estruturados. Os dados serão transformados e carregados em um Data Lake, e finalmente consumidos por ferramentas de visualização como o Metabase.
 
