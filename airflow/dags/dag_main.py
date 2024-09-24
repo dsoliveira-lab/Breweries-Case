@@ -22,7 +22,7 @@ default_args = {
     dag_id='main_dag',
     default_args=default_args,
     description='DAG responsavel pelo ETL do case breweries',
-    schedule_interval=timedelta(days=1),
+    schedule_interval='30 16 * * *',
     catchup=False
 )
 def main_dag():
