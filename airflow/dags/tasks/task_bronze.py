@@ -86,16 +86,24 @@ def brewery_etl_bronze(api_url, bronze_bucket, endpoint_url, access_key, secret_
 
                 for index, row in pd_df.iterrows():
                     try:
-                        cursor.execute(
-                            """
-                            INSERT INTO bs_bronze (id, name, brewery_type, address_1, address_2, address_3,
-                            city, state_province, postal_code, country, longitude, latitude, phone, website_url, state,	street)
-                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                            """,
-                            (row['id'], row['name'], row['brewery_type'], row['address_1'], row['address_2'],
-                             row['address_3'], row['city'], row['state_province'], row['postal_code'], row['country'],
-                             row['longitude'], row['latitude'], row['phone'], row['website_url'], row['state'], row['street'])
-                        )
+                        # Verifica se o ID já existe na tabela
+                        cursor.execute("SELECT COUNT(*) FROM bs_bronze WHERE id = %s", (row['id'],))
+                        exists = cursor.fetchone()[0] > 0
+                        
+                        if not exists:
+                            cursor.execute(
+                                """
+                                INSERT INTO bs_bronze (id, name, brewery_type, address_1, address_2, address_3,
+                                city, state_province, postal_code, country, longitude, latitude, phone, website_url, state,	street)
+                                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                """,
+                                (row['id'], row['name'], row['brewery_type'], row['address_1'], row['address_2'],
+                                 row['address_3'], row['city'], row['state_province'], row['postal_code'], row['country'],
+                                 row['longitude'], row['latitude'], row['phone'], row['website_url'], row['state'], row['street'])
+                            )
+                        else:
+                            logging.info(f"O ID {row['id']} já existe no banco de dados e não será inserido.")
+                            
                     except Exception as e:
                         logging.error(f"Erro ao inserir dados na linha {index}: {e}")
                 connection.commit()
