@@ -1,20 +1,18 @@
 
-# BEES Data Engineering  
+# Data Engineering  
 ## 🍺 Projeto de Dados – Breweries Case
 
 [![Python Version](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/downloads/)  
 [![Airflow DAG Status](https://img.shields.io/badge/DAGs%20Status-Passing-brightgreen)](http://localhost:8080)  
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/dsoliveria-lab/breweries_case/actions)
 
-Este repositório apresenta um projeto de engenharia de dados cujo objetivo é demonstrar habilidades na extração de dados de uma API pública, tratamento e armazenamento em um data lake, seguindo a **arquitetura em camadas (medalhão)**:
+Este repositório apresenta um projeto de engenharia de dados cujo objetivo é demonstrar habilidades na extração de dados de uma API pública, tratamento e armazenamento em um data lake, seguindo a **arquitetura em camadas (medallion)**:
 
 - **Bronze**: dados brutos extraídos da API  
 - **Silver**: dados limpos e particionados por localização  
 - **Gold**: dados agregados e prontos para análise  
 
 A solução integra ferramentas como **Apache Airflow**, **MinIO**, **PostgreSQL** e **Metabase**, além de ser orquestrada em ambiente **Docker**. O projeto também evidencia boas práticas com **Python**, versionamento de código e documentação clara.
-
-💡 *Bons estudos e não se esqueça de beber água! 💦*
 
 ---
 
