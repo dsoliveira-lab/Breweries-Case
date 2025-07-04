@@ -1,117 +1,162 @@
-# BEES Data Engineering 
-## 🍺 Data Project – Breweries Case
 
-Este repositório contém a estrutura de um projeto de dados, tendo por objetivo a avaliação das habilidades em consumir dados de uma API, transformando-os e persistindo-os em um data lake seguindo a arquitetura medalhão com três camadas: dados brutos(Bronze), dados selecionados particionado por localização(Silver) e uma camada analítica agregada(Gold). Integrando o Apache Airflow, Minio, Postgres e Metabase. Utilizando uma infra-estrutura de conteinerização(Docker), boas práticas de programação(Python) e Documentação, além da criação de repositório e versionamento do mesmo.
- 
-Bons estudos e bebam água💦!
+# BEES Data Engineering  
+## 🍺 Projeto de Dados – Breweries Case
+
+[![Python Version](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/downloads/)  
+[![Airflow DAG Status](https://img.shields.io/badge/DAGs%20Status-Passing-brightgreen)](http://localhost:8080)  
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/dsoliveria-lab/breweries_case/actions)
+
+Este repositório apresenta um projeto de engenharia de dados cujo objetivo é demonstrar habilidades na extração de dados de uma API pública, tratamento e armazenamento em um data lake, seguindo a **arquitetura em camadas (medalhão)**:
+
+- **Bronze**: dados brutos extraídos da API  
+- **Silver**: dados limpos e particionados por localização  
+- **Gold**: dados agregados e prontos para análise  
+
+A solução integra ferramentas como **Apache Airflow**, **MinIO**, **PostgreSQL** e **Metabase**, além de ser orquestrada em ambiente **Docker**. O projeto também evidencia boas práticas com **Python**, versionamento de código e documentação clara.
+
+💡 *Bons estudos e não se esqueça de beber água! 💦*
+
+---
 
 ## 📊 Arquitetura da Pipeline
-Abaixo está a representação gráfica da arquitetura deste projeto:
+
+Abaixo está a representação visual da arquitetura implementada:
 
 <img src="./image/Diagrama_Project_BEES.png" alt="Desenho Arquitetura" width="500" />
 
-Nesta arquitetura, os dados são extraídos de uma única fonte(API), contendo dados semi-estruturados. Os dados serão transformados e carregados em um Data Lake, e finalmente consumidos por ferramentas de visualização como o Metabase.
+Nesta arquitetura, os dados semi-estruturados são extraídos de uma API e passam por camadas de transformação, armazenamento e visualização.
 
-## 📂 Estrutura do Projeto
-A estrutura do projeto está organizada da seguinte maneira:
+---
 
-```
+## 📁 Estrutura do Projeto
+
+```bash
 /BREWERIES_CASE
 │
-├── analises/                            # Nessa pasta existe os arquivos que utilizei para exploração dos dados inicialmente, e tratamentos realizados em Spark.
-│   ├── bs_bronze.parquet
-│   └── bs_silver.parquet
-│   └── explo.ipynb
-│   └── trf_bs_bronze_to_bs_silver.ipynb
 ├── airflow/
 │   ├── config_airflow/
-│   │   └── airflow.Dockerfile           # Dockerfile customizado para o Airflow
+│   │   ├── airflow.Dockerfile         # Dockerfile customizado para o Airflow
+│   │   └── entrypoint.sh              # Entrypoint do container do Airflow
 │   ├── dags/
-│   │   └── dag_main.py                  # Arquivo principal da DAG contendo as extrações e as transformações em dbt.
+│   │   ├── dag_main.py                # DAG principal: bronze → silver → gold
+│   │   ├── dag_main_validation.py     # DAG alternativa com step de validação incluído
+│   │   ├── dag_validation.py          # DAG dedicada à etapa de validação
+│   │   └── variables/                 # Variáveis utilizadas pelo Airflow
 │   ├── tasks/
-│   │   ├── task_bronze.py               # Arquivo de task contendo a extração dos dados vindos da API <https://api.openbrewerydb.org/breweries>, salvando-os na camada bronze.
-│   │   └── task_silver.py               # Arquivo de task contendo os dados coletados na camada_bronze, transformações e particionamentos, salvando os dados na camada silver.
-│   │   └── task_gold.py                 # Arquivo de task contendo dos dados coletados em silver, com resposta a pergunta feita no projeto. 
-├── docker-compose.yaml                  # Estrutura e requisitos iniciais em container do projeto.
-├── .gitgnore                            # Arquivo .git para ignorar arquivos e diretórios que não são necessários para utilização do projeto.
-├── requirements.txt                     # Responsavel pelas lib's principais para a criação do projeto.
-├── README.md                            # Documentação do projeto, utilizada para o entendimento e funcionamento do mesmo.
+│   │   ├── task_bronze.py             # Extração da API e salvamento na camada Bronze
+│   │   ├── task_silver.py             # Transformações e particionamento por país na Silver
+│   │   ├── task_gold.py               # Agregações na camada Gold
+│   │   ├── task_silver_alt.py         # Versão alternativa de Silver
+│   │   └── task_gold_alt.py           # Versão alternativa de Gold
+├── docker-compose.yaml                # Orquestração dos serviços via Docker
+├── .gitignore                         # Ignora arquivos desnecessários ao versionamento
+├── requirements.txt                   # Bibliotecas Python utilizadas no projeto
+├── README.md                          # Documentação do projeto
 ```
 
-## 🛠️ Tecnologias Utilizadas 
-- **API**: Dados semi-estruturados, utilizados na prática do projeto.
-- **Apache Airflow**: Para orquestração de workflows e automação de tarefas.
-- **Docker**: Para conteinerização de serviços, garantindo um ambiente isolado e reprodutível.
-- **MinIO**: Comparado ao S3 da AWS, servirá para o armazenamento oferecendo escalabilidade, disponibilidade dos dados, segurança e performance. 
-- **Postgres**: Banco de dados utilizado como Data Lake para armazenar as tabelas nas suas diferentes camadas. 
-- **Metabase**: Ferramenta de BI para visualização e análise dos dados armazenados no Data Warehouse.
+---
+
+## 🧰 Tecnologias Utilizadas
+
+- **API Open Brewery DB**: Fonte de dados pública, com informações sobre cervejarias nos EUA  
+- **Apache Airflow**: Orquestração e agendamento das tarefas ETL  
+- **Docker**: Ambiente conteinerizado e reprodutível  
+- **MinIO**: Armazenamento compatível com S3, simula o Data Lake  
+- **PostgreSQL**: Armazenamento relacional dos dados transformados  
+- **Metabase**: BI para visualização das métricas produzidas  
+
+---
 
 ## 🐳 Docker
-O projeto está configurado para rodar em um ambiente Docker. O `docker-compose.yaml` e o `Dockerfile` na raiz do projeto são usados para configurar o ambiente de desenvolvimento e execução dos serviços. Além disso, o Airflow possui um `Dockerfile` customizado para garantir que todas as dependências específicas sejam atendidas.
 
-![docker](./image/docker.png)
+O projeto é totalmente conteinerizado. O `docker-compose.yaml` configura todos os serviços, incluindo Airflow, MinIO, PostgreSQL e Metabase.
 
-## ![airflow2](https://github.com/user-attachments/assets/513d0d86-7aa4-4dc8-8086-702037b91348) Airflow
-- **DAGs**: As DAGs (Directed Acyclic Graphs) são definidas dentro da pasta `airflow/dags/`. O arquivo principal é o `dag_main.py`, que orquestra diferentes tarefas.
-- **Tasks**: As tarefas são modularizadas dentro da pasta `airflow/tasks/`. Um exemplo é o `task_nome_camada.py`, que pode conter lógica para processar arquivos parquet.
-- **Configurações**: Todas as configurações e customizações específicas do Airflow estão na pasta `airflow/config_airflow/`.
+```bash
+docker-compose up -d
+```
 
-![airflow](./image/airflow.png)
-  
-## ![s3](https://img.icons8.com/?size=30&id=Gk2QpGf92IzK&format=png&color=000000) MinIO
-- **Armazenamento**: Utilização e armazenamento dos dados na utilização dos buckets bronze, silver e gold. Atendendo aos requisitos solicitados no escopo do projeto.
-- **Medalhão**: Padrão de design de dados usado em um data lake, com o objetivo de melhorar incremental e progressivamente a estrutura e qualidade das camadas(Bronze ⇒ Silver ⇒ Gold) da arquitetura.
-- **Configurações**: Todas as configurações e customizações específicas do Metabase estão no arquivo `docker-compose.yml`.
+---
 
-![minio](./image/minio.png)
+## ⚙️ Airflow
 
-## ![postgres](https://img.icons8.com/?size=30&id=38561&format=png&color=000000) Postgres
-- **Data-Viz**: Criação e disponibilidade dos dados, atendendo aos mais diversos tipos de consumidores.
-- **Configurações**: Todas as configurações e customizações específicas do Metabase estão no arquivo `docker-compose.yml`.
+- DAGs localizadas em `airflow/dags/`  
+- Tarefas desacopladas e reutilizáveis em `airflow/tasks/`  
+- Configurações customizadas no `airflow/config_airflow/`  
 
-![bd](./image/bd.png)
+---
 
-## ![metabase](https://github.com/user-attachments/assets/02627285-44d7-4475-9e71-15079d4d0b0e) Metabase
-- **Data-Viz**: Criação e disponibilidade de visualização de dados, conexão com o postgres, atendendo assim aos mais diversos tipos de consumidores.
-- **Users**: Configuração de controle de acesso às camadas e tabelas por grupo de usuários.
-- **Configurações**: Todas as configurações e customizações específicas do Metabase estão no arquivo `docker-compose.yml`.
+## 🗃️ MinIO
 
-![dashboard](./image/DashBoard.png)
+- Armazena os dados nas camadas **bronze**, **silver** e **gold**  
+- Estrutura particionada por país na camada silver  
+- Armazenamento em formato Parquet  
+
+---
+
+## 🗄️ PostgreSQL
+
+- Banco relacional para consumo posterior em BI  
+- Tabelas criadas automaticamente conforme cada camada  
+- Utilizado também para validações e análises  
+
+---
+
+## 📊 Metabase
+
+- BI conectado ao banco PostgreSQL  
+- Dashboards com KPIs e insights por localidade e tipo de cervejaria  
+- Controle de acesso configurável por grupo de usuários  
+
+---
+
+## 📈 Exemplos Visuais da Camada Gold
+
+![Exemplo Dashboard](./image/DashBoard.png)
+
+- Contagem de cervejarias por tipo e localidade  
+- Visualização dos principais estados com maior número de cervejarias  
+- KPIs configurados para análise rápida e tomada de decisão  
+
+---
 
 ## 🚀 Como iniciar
 
-1. Clone o repositório:
+1. Clone o repositório:  
    ```bash
-   git clone https://github.com/wuldson-franco/breweries_case.git
+   git clone https://github.com/dsoliveria-lab/breweries_case.git
    ```
-2. Navegue até o diretório do projeto:
+2. Acesse o diretório do projeto:  
    ```bash
    cd breweries_case
    ```
-3. Suba os containers com Docker:
+3. Suba os containers com Docker:  
    ```bash
    docker-compose up -d
    ```
-4. Acesse o Airflow na URL e inicie as DAGs conforme necessário.
-    ```bash
+4. Acesse o Airflow:  
+   ```
    http://localhost:8080
    ```
-5. Apague os containers Docker:
+5. Após uso, remova os containers:  
    ```bash
    docker-compose down -v
-   ``` 
+   ```
 
-## 📚 Documentação
+---
 
-- [Documentação Oficial do Airflow](https://airflow.apache.org/docs/)
-- [Documentação Oficial do Docker](https://docs.docker.com)
-- [Documentação Oficial do MinIO](https://min.io/docs/kes/)
-- [Documentação Oficial do Metabase](https://www.metabase.com/docs/latest/)
+## 📈 Melhorias Futuras
 
-## 📋 Contribuições e Dúvidas
+- **Testes automatizados:** Implementar testes unitários e de integração para as DAGs e tarefas  
+- **Monitoramento:** Configurar alertas via Slack ou email para falhas no pipeline  
+- **Escalabilidade:** Migrar armazenamento para S3 na nuvem e usar banco gerenciado para produção  
+- **Documentação técnica:** Gerar documentação automática das DAGs e tarefas  
+- **Pipeline CI/CD:** Automatizar deploy das DAGs via pipelines de integração contínua  
 
-Contribuições e dúvidas são bem-vindas, qualquer coisa manda msg!
+---
 
-## 📝 Licença
+## 📚 Documentação Oficial
 
-Este projeto está licenciado sob a [MIT License](LICENSE).
+- [Apache Airflow](https://airflow.apache.org/docs/)  
+- [Docker](https://docs.docker.com)  
+- [MinIO](https://min.io/docs/kes/)  
+- [Metabase](https://www.metabase.com/docs/latest/)

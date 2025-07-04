@@ -1,0 +1,5 @@
+{
+  "minio_access_key": "minioadmin",
+  "minio_secret_key": "minio@9876!",
+  "minio_endpoint_url": "http://minio:9000"
+}

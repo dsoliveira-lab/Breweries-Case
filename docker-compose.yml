@@ -6,7 +6,7 @@ services:
     container_name: minio
     environment:
       MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minio@1234!
+      MINIO_ROOT_PASSWORD: minio@9876!
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -22,7 +22,7 @@ services:
     entrypoint: |
       sh -c "
       sleep 10 &&
-      mc alias set myminio http://minio:9000 minioadmin minio@1234! &&
+      mc alias set myminio http://minio:9000 minioadmin minio@9876! &&
       mc mb myminio/bronze &&
       mc mb myminio/silver &&
       mc mb myminio/gold
@@ -54,7 +54,7 @@ services:
       AIRFLOW__CORE__LOGGING_LEVEL: INFO
       MINIO_ENDPOINT: http://minio:9000
       MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minio@1234!
+      MINIO_SECRET_KEY: minio@9876!
     depends_on:
       - postgres-airflow
       - minio
@@ -63,7 +63,12 @@ services:
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./airflow/config_airflow:/opt/airflow/config_airflow
-    command: ['airflow', 'standalone']
+    #command: ['airflow', 'standalone']
+    command: >
+      bash -c "
+        chmod +x /opt/airflow/config_airflow/entrypoint.sh &&
+        /opt/airflow/config_airflow/entrypoint.sh
+      "
 
   metabase:
     image: metabase/metabase:v0.47.1

@@ -5,12 +5,11 @@ import logging
 from airflow.hooks.base_hook import BaseHook
 import psycopg2
 
-# Configurações de logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def brewery_etl_silver(bronze_bucket, silver_bucket, endpoint_url, access_key, secret_key):
-    # Cria cliente MinIO
+    # Cliente MinIO
     minio_client = boto3.client(
         's3',
         endpoint_url=endpoint_url,
@@ -18,15 +17,17 @@ def brewery_etl_silver(bronze_bucket, silver_bucket, endpoint_url, access_key, s
         aws_secret_access_key=secret_key
     )
 
-    def read_bronze_data(minio_client, bucket, key):
+    # Função para ler dados da camada bronze
+    def read_bronze_data(minio_client, bronze_bucket, obj_key):
         try:
-            response = minio_client.get_object(Bucket=bucket, Key=key)
-            data = response['Body'].read()
-            return pd.read_parquet(io.BytesIO(data))
+            bronze_object = minio_client.get_object(Bucket=bronze_bucket, Key=obj_key)
+            bronze_data = bronze_object['Body'].read()
+            return pd.read_parquet(io.BytesIO(bronze_data))
         except Exception as e:
-            logging.error(f"Erro ao ler bronze: {e}")
+            logging.error(f"Erro ao ler os dados da camada bronze: {e}")
             raise
 
+    # Função de transformação
     def data_transformation(df):
         try:
             latitude_replace = {
@@ -42,8 +43,6 @@ def brewery_etl_silver(bronze_bucket, silver_bucket, endpoint_url, access_key, s
                 "6c53984f-fac1-4ea7-9c44-44e25897c71a": "44.8149712",
                 "34e8c68b-6146-453f-a4b9-1f6cd99a5ada": "42.7201082"
             }
-            df['latitude'] = df.apply(lambda row: latitude_replace.get(row['id'], row['latitude']), axis=1)
-
             longitude_replace = {
                 "9c5a66c8-cc13-416f-a5d9-0a769c87d318": "-97.7701612",
                 "d81ff708-b5d2-478f-af6a-6d40f5beb9ac": "-78.7127541",
@@ -57,8 +56,11 @@ def brewery_etl_silver(bronze_bucket, silver_bucket, endpoint_url, access_key, s
                 "6c53984f-fac1-4ea7-9c44-44e25897c71a": "-73.0816367",
                 "34e8c68b-6146-453f-a4b9-1f6cd99a5ada": "-87.8833635"
             }
+
+            df['latitude'] = df.apply(lambda row: latitude_replace.get(row['id'], row['latitude']), axis=1)
             df['longitude'] = df.apply(lambda row: longitude_replace.get(row['id'], row['longitude']), axis=1)
 
+            # Outras correções específicas
             df.loc[df['id'] == "e5f3e72a-fee2-4813-82cf-f2e53b439ae6", 'address_1'] = "Clonmore"
             df.loc[df['id'] == "e5f3e72a-fee2-4813-82cf-f2e53b439ae6", 'address_2'] = ""
             df.loc[df['id'] == "0faa0fb2-fffa-416d-9eab-46f67477c8ef", 'street'] = "12 W Main St"
@@ -69,14 +71,13 @@ def brewery_etl_silver(bronze_bucket, silver_bucket, endpoint_url, access_key, s
             df['longitude'] = df['longitude'].astype(float)
 
             return df
-
         except Exception as e:
             logging.error(f"Erro ao transformar dados: {e}")
             raise
 
     def create_table(cursor):
         cursor.execute("""
-            CREATE TABLE IF NOT EXISTS ds_silver (
+            CREATE TABLE IF NOT EXISTS bs_silver (
                 id VARCHAR(255) PRIMARY KEY,
                 name VARCHAR(255),
                 brewery_type VARCHAR(255),
@@ -97,26 +98,19 @@ def brewery_etl_silver(bronze_bucket, silver_bucket, endpoint_url, access_key, s
         """)
 
     try:
-        bronze_df = read_bronze_data(minio_client, bronze_bucket, "ds_bronze.parquet")
+        # Leitura e transformação dos dados
+        obj_key = "ds_bronze.parquet"
+        bronze_df = read_bronze_data(minio_client, bronze_bucket, obj_key)
         silver_df = data_transformation(bronze_df)
 
-        # Particionamento por país (apenas)
-        for country in silver_df['country'].unique():
-            country_df = silver_df[silver_df['country'] == country]
+        # Salva o DataFrame completo em um único arquivo parquet
+        parquet_buffer = io.BytesIO()
+        silver_df.to_parquet(parquet_buffer, index=False)
+        parquet_buffer.seek(0)
+        minio_client.put_object(Bucket=silver_bucket, Key="ds_silver.parquet", Body=parquet_buffer.getvalue())
+        logging.info("Dados tratados e salvos na camada silver com sucesso.")
 
-            parquet_buffer = io.BytesIO()
-            country_df.to_parquet(parquet_buffer, index=False)
-            parquet_buffer.seek(0)
-
-            minio_client.put_object(
-                Bucket=silver_bucket,
-                #Key=f"country={country}/ds_silver_{country}.parquet",
-                Key=f"ds_silver_{country}.parquet",
-                Body=parquet_buffer.getvalue()
-            )
-            logging.info(f"Arquivo salvo: ds_silver_{country}.parquet para o país: {country}")
-
-        # Inserção no PostgreSQL
+        # Inserção no banco PostgreSQL
         conn = BaseHook.get_connection('my_postgres')
         with psycopg2.connect(
             host=conn.host,
@@ -127,15 +121,13 @@ def brewery_etl_silver(bronze_bucket, silver_bucket, endpoint_url, access_key, s
         ) as connection:
             with connection.cursor() as cursor:
                 create_table(cursor)
-
-                for _, row in silver_df.iterrows():
+                for index, row in silver_df.iterrows():
                     try:
-                        cursor.execute("""
-                            INSERT INTO ds_silver (
-                                id, name, brewery_type, address_1, address_2, address_3,
-                                city, state_province, postal_code, country,
-                                longitude, latitude, phone, website_url, state, street
-                            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        cursor.execute(
+                            """
+                            INSERT INTO bs_silver (id, name, brewery_type, address_1, address_2, address_3,
+                            city, state_province, postal_code, country, longitude, latitude, phone, website_url, state, street)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                             ON CONFLICT (id) DO UPDATE SET
                                 name = EXCLUDED.name,
                                 brewery_type = EXCLUDED.brewery_type,
@@ -152,18 +144,19 @@ def brewery_etl_silver(bronze_bucket, silver_bucket, endpoint_url, access_key, s
                                 website_url = EXCLUDED.website_url,
                                 state = EXCLUDED.state,
                                 street = EXCLUDED.street;
-                        """, (
-                            row['id'], row['name'], row['brewery_type'], row['address_1'],
-                            row['address_2'], row['address_3'], row['city'], row['state_province'],
-                            row['postal_code'], row['country'], row['longitude'], row['latitude'],
-                            row['phone'], row['website_url'], row['state'], row['street']
-                        ))
+                            """,
+                            (
+                                row['id'], row['name'], row['brewery_type'], row['address_1'], row['address_2'],
+                                row['address_3'], row['city'], row['state_province'], row['postal_code'], row['country'],
+                                row['longitude'], row['latitude'], row['phone'], row['website_url'], row['state'], row['street']
+                            )
+                        )
                     except Exception as e:
-                        logging.error(f"Erro ao inserir registro {row['id']}: {e}")
+                        logging.error(f"Erro ao inserir linha {index}: {e}")
                 connection.commit()
 
     except Exception as e:
-        logging.error(f"Erro geral no ETL Silver: {e}")
+        logging.error(f"Erro no processo da camada silver: {e}")
         raise
 
-    logging.info("Processo ETL da camada Silver finalizado com sucesso.")
+    logging.info("Processo ETL da camada silver concluído com sucesso.")

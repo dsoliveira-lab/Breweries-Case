@@ -31,14 +31,14 @@ def brewery_etl_bronze(api_url, bronze_bucket, endpoint_url, access_key, secret_
             raise
 
     try:
-        # Obter dados da API Open Breweries DB e converte para DataFrame
+        # Obter dados da API e converte para DataFrame
         pd_df = get_api_data(api_url)
 
         # Escrever os dados em formato Parquet no MinIO (camada bronze)
         parquet_buffer = io.BytesIO()
         pd_df.to_parquet(parquet_buffer, index=False)
         parquet_buffer.seek(0)
-        minio_client.put_object(Bucket=bronze_bucket, Key="bs_bronze.parquet", Body=parquet_buffer.getvalue())
+        minio_client.put_object(Bucket=bronze_bucket, Key="ds_bronze.parquet", Body=parquet_buffer.getvalue())
         logging.info("Dados salvos no MinIO com sucesso")
 
     except Exception as e:
@@ -48,7 +48,7 @@ def brewery_etl_bronze(api_url, bronze_bucket, endpoint_url, access_key, secret_
     def create_table(cursor):
         # Criação da tabela caso ela não exista
         cursor.execute("""
-            CREATE TABLE IF NOT EXISTS bs_bronze (
+            CREATE TABLE IF NOT EXISTS ds_bronze (
                 id VARCHAR(255) PRIMARY KEY,
                 name VARCHAR(255),
                 brewery_type VARCHAR(255),
@@ -87,13 +87,13 @@ def brewery_etl_bronze(api_url, bronze_bucket, endpoint_url, access_key, secret_
                 for index, row in pd_df.iterrows():
                     try:
                         # Verifica se o ID já existe na tabela
-                        cursor.execute("SELECT COUNT(*) FROM bs_bronze WHERE id = %s", (row['id'],))
+                        cursor.execute("SELECT COUNT(*) FROM ds_bronze WHERE id = %s", (row['id'],))
                         exists = cursor.fetchone()[0] > 0
                         
                         if not exists:
                             cursor.execute(
                                 """
-                                INSERT INTO bs_bronze (id, name, brewery_type, address_1, address_2, address_3,
+                                INSERT INTO ds_bronze (id, name, brewery_type, address_1, address_2, address_3,
                                 city, state_province, postal_code, country, longitude, latitude, phone, website_url, state,	street)
                                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                                 """,

@@ -8,7 +8,7 @@ import psycopg2
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def breweries_etl_gold(silver_bucket, gold_bucket, endpoint_url, access_key, secret_key):
+def brewery_etl_gold(silver_bucket, gold_bucket, endpoint_url, access_key, secret_key):
     minio_client = boto3.client(
         's3',
         endpoint_url=endpoint_url,
@@ -16,39 +16,53 @@ def breweries_etl_gold(silver_bucket, gold_bucket, endpoint_url, access_key, sec
         aws_secret_access_key=secret_key
     )
 
-    def read_silver_data(minio_client, silver_bucket):
+    def read_all_silver_files(minio_client, silver_bucket):
         try:
-            silver_object = minio_client.get_object(Bucket=silver_bucket, Key='bs_silver.parquet')
-            silver_data = silver_object['Body'].read()
-            return pd.read_parquet(io.BytesIO(silver_data))
+            response = minio_client.list_objects_v2(Bucket=silver_bucket)
+            files = [item['Key'] for item in response.get('Contents', []) if item['Key'].startswith("ds_silver_") and item['Key'].endswith(".parquet")]
+
+            all_dfs = []
+            for file_key in files:
+                logging.info(f"Lendo arquivo: {file_key}")
+                obj = minio_client.get_object(Bucket=silver_bucket, Key=file_key)
+                data = obj['Body'].read()
+                df = pd.read_parquet(io.BytesIO(data))
+                all_dfs.append(df)
+
+            if not all_dfs:
+                raise ValueError("Nenhum arquivo Parquet encontrado na camada silver.")
+
+            return pd.concat(all_dfs, ignore_index=True)
+
         except Exception as e:
-            logging.error(f"Erro ao ler os dados da camada silver: {e}")
+            logging.error(f"Erro ao ler os arquivos da camada silver: {e}")
             raise
 
     def data_aggregation(df):
         try:
-            # Agrupando por tipo de cervejaria e localização
-            aggregated_df = df.groupby(['brewery_type', 'city', 'state_province', 'country']).size().reset_index(name='brewery_count')
+            aggregated_df = df.groupby(['brewery_type', 'city', 'state_province', 'country']) \
+                              .size().reset_index(name='brewery_count')
             return aggregated_df
         except Exception as e:
             logging.error(f"Erro ao realizar a agregação de dados: {e}")
             raise
 
     try:
-        # Leitura dos dados da camada silver
-        silver_df = read_silver_data(minio_client, silver_bucket)
-
-        # Agregação dos dados
+        silver_df = read_all_silver_files(minio_client, silver_bucket)
         gold_df = data_aggregation(silver_df)
 
-        # Escrever os dados agregados na camada gold
+        # Salvar no bucket Gold
         parquet_buffer = io.BytesIO()
         gold_df.to_parquet(parquet_buffer, index=False)
         parquet_buffer.seek(0)
-        minio_client.put_object(Bucket=gold_bucket, Key='bs_gold.parquet', Body=parquet_buffer.getvalue())
-        logging.info("Dados agregados e salvos na camada gold com sucesso")
+        minio_client.put_object(
+            Bucket=gold_bucket,
+            Key='ds_gold.parquet',
+            Body=parquet_buffer.getvalue()
+        )
+        logging.info("Arquivo ds_gold.parquet salvo com sucesso no bucket Gold")
 
-        # Opcional: Gravar no banco de dados
+        # Inserção no banco
         conn = BaseHook.get_connection('my_postgres')
         with psycopg2.connect(
             host=conn.host,
@@ -59,7 +73,7 @@ def breweries_etl_gold(silver_bucket, gold_bucket, endpoint_url, access_key, sec
         ) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS bs_gold (
+                    CREATE TABLE IF NOT EXISTS ds_gold (
                         brewery_type VARCHAR(255),
                         city VARCHAR(255),
                         state_province VARCHAR(255),
@@ -69,23 +83,25 @@ def breweries_etl_gold(silver_bucket, gold_bucket, endpoint_url, access_key, sec
                     );
                 """)
 
-                for index, row in gold_df.iterrows():
+                for _, row in gold_df.iterrows():
                     try:
-                        cursor.execute(
-                            """
-                            INSERT INTO bs_gold (brewery_type, city, state_province, country, brewery_count)
-                            VALUES (%s, %s, %s, %s, %s)
-                            ON CONFLICT (brewery_type, city, state_province, country) DO UPDATE SET
-                                brewery_count = EXCLUDED.brewery_count;
-                            """,
-                            (row['brewery_type'], row['city'], row['state_province'], row['country'], row['brewery_count'])
-                        )
+                        cursor.execute("""
+                            INSERT INTO ds_gold (
+                                brewery_type, city, state_province, country, brewery_count
+                            ) VALUES (%s, %s, %s, %s, %s)
+                            ON CONFLICT (brewery_type, city, state_province, country)
+                            DO UPDATE SET brewery_count = EXCLUDED.brewery_count;
+                        """, (
+                            row['brewery_type'], row['city'], row['state_province'],
+                            row['country'], row['brewery_count']
+                        ))
                     except Exception as e:
-                        logging.error(f"Erro ao inserir dados na linha {index}: {e}")
+                        logging.error(f"Erro ao inserir linha: {e}")
+
                 connection.commit()
 
     except Exception as e:
-        logging.error(f"Erro ao processar os dados da camada gold: {e}")
+        logging.error(f"Erro no processo ETL da camada Gold: {e}")
         raise
 
     logging.info("Processo ETL da camada gold concluído com sucesso.")
